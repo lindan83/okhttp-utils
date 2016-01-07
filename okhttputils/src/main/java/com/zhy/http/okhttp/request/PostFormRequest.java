@@ -1,11 +1,5 @@
 package com.zhy.http.okhttp.request;
 
-import okhttp3.FormBody;
-import okhttp3.Headers;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import com.zhy.http.okhttp.OkHttpUtils;
 import com.zhy.http.okhttp.builder.PostFormBuilder;
 import com.zhy.http.okhttp.callback.Callback;
@@ -15,35 +9,45 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
 /**
- * Created by zhy on 15/12/14.
+ * 多文件上传的请求
  */
-public class PostFormRequest extends OkHttpRequest
-{
+public class PostFormRequest extends OkHttpRequest {
     private List<PostFormBuilder.FileInput> files;
 
-    public PostFormRequest(String url, Object tag, Map<String, String> params, Map<String, String> headers, List<PostFormBuilder.FileInput> files)
-    {
+    /**
+     * 构造方法
+     *
+     * @param url     请求URL
+     * @param tag     标识TAG
+     * @param params  参数
+     * @param headers 请求头
+     * @param files   文件列表
+     */
+    public PostFormRequest(String url, Object tag, Map<String, String> params, Map<String, String> headers, List<PostFormBuilder.FileInput> files) {
         super(url, tag, params, headers);
         this.files = files;
     }
 
     @Override
-    protected RequestBody buildRequestBody()
-    {
-        if (files == null || files.isEmpty())
-        {
+    protected RequestBody buildRequestBody() {
+        if (files == null || files.isEmpty()) {
             FormBody.Builder builder = new FormBody.Builder();
             addParams(builder);
             return builder.build();
-        } else
-        {
+        } else {
             MultipartBody.Builder builder = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM);
             addParams(builder);
 
-            for (int i = 0; i < files.size(); i++)
-            {
+            for (int i = 0; i < files.size(); i++) {
                 PostFormBuilder.FileInput fileInput = files.get(i);
                 RequestBody fileBody = RequestBody.create(MediaType.parse(guessMimeType(fileInput.filename)), fileInput.file);
                 builder.addFormDataPart(fileInput.key, fileInput.filename, fileBody);
@@ -53,68 +57,57 @@ public class PostFormRequest extends OkHttpRequest
     }
 
     @Override
-    protected RequestBody wrapRequestBody(RequestBody requestBody, final Callback callback)
-    {
+    protected RequestBody wrapRequestBody(RequestBody requestBody, final Callback callback) {
         if (callback == null) return requestBody;
-        CountingRequestBody countingRequestBody = new CountingRequestBody(requestBody, new CountingRequestBody.Listener()
-        {
+        CountingRequestBody countingRequestBody = new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
             @Override
-            public void onRequestProgress(final long bytesWritten, final long contentLength)
-            {
-
-                OkHttpUtils.getInstance().getDelivery().post(new Runnable()
-                {
+            public void onRequestProgress(final long bytesWritten, final long contentLength) {
+                OkHttpUtils.getInstance().getDelivery().post(new Runnable() {
                     @Override
-                    public void run()
-                    {
+                    public void run() {
                         callback.inProgress(bytesWritten * 1.0f / contentLength);
                     }
                 });
-
             }
         });
         return countingRequestBody;
     }
 
     @Override
-    protected Request buildRequest(Request.Builder builder, RequestBody requestBody)
-    {
+    protected Request buildRequest(Request.Builder builder, RequestBody requestBody) {
         return builder.post(requestBody).build();
     }
 
-    private String guessMimeType(String path)
-    {
+    /**
+     * 根据URL猜测MIME类型
+     * @param path URL
+     * @return MIME类型
+     */
+    private String guessMimeType(String path) {
         FileNameMap fileNameMap = URLConnection.getFileNameMap();
         String contentTypeFor = fileNameMap.getContentTypeFor(path);
-        if (contentTypeFor == null)
-        {
+        if (contentTypeFor == null) {
             contentTypeFor = "application/octet-stream";
         }
         return contentTypeFor;
     }
 
-    private void addParams(MultipartBody.Builder builder)
-    {
-        if (params != null && !params.isEmpty())
-        {
-            for (String key : params.keySet())
-            {
+    private void addParams(MultipartBody.Builder builder) {
+        if (params != null && !params.isEmpty()) {
+            for (String key : params.keySet()) {
                 builder.addPart(Headers.of("Content-Disposition", "form-data; name=\"" + key + "\""),
                         RequestBody.create(null, params.get(key)));
             }
         }
     }
 
-    private void addParams(FormBody.Builder builder)
-    {
-        if (params == null || params.isEmpty())
-        {
+    private void addParams(FormBody.Builder builder) {
+        if (params == null || params.isEmpty()) {
             builder.add("1", "1");
             return;
         }
 
-        for (String key : params.keySet())
-        {
+        for (String key : params.keySet()) {
             builder.add(key, params.get(key));
         }
     }

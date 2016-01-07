@@ -5,10 +5,9 @@ import com.zhy.http.okhttp.request.RequestCall;
 import java.util.Map;
 
 /**
- * Created by zhy on 15/12/14.
+ * 请求构建器抽象基类
  */
-public abstract class OkHttpRequestBuilder
-{
+public abstract class OkHttpRequestBuilder {
     protected String url;
     protected Object tag;
     protected Map<String, String> headers;

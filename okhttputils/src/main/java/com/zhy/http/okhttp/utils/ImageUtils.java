@@ -10,42 +10,39 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 
 /**
- * Created by zhy on 15/11/6.
+ * 图像处理工具
  */
-public class ImageUtils
-{
+public class ImageUtils {
     /**
      * 根据InputStream获取图片实际的宽度和高度
      *
-     * @param imageStream
-     * @return
+     * @param imageStream 输入字节流
+     * @return 图片大小
      */
-    public static ImageSize getImageSize(InputStream imageStream)
-    {
+    public static ImageSize getImageSize(InputStream imageStream) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeStream(imageStream, null, options);
         return new ImageSize(options.outWidth, options.outHeight);
     }
 
-    public static class ImageSize
-    {
+    /**
+     * 图片大小
+     */
+    public static class ImageSize {
         int width;
         int height;
 
-        public ImageSize()
-        {
+        public ImageSize() {
         }
 
-        public ImageSize(int width, int height)
-        {
+        public ImageSize(int width, int height) {
             this.width = width;
             this.height = height;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "ImageSize{" +
                     "width=" + width +
                     ", height=" + height +
@@ -53,8 +50,14 @@ public class ImageUtils
         }
     }
 
-    public static int calculateInSampleSize(ImageSize srcSize, ImageSize targetSize)
-    {
+    /**
+     * 根据图片原始大小和目标大小计算缩放比
+     *
+     * @param srcSize    原始大小
+     * @param targetSize 目标大小
+     * @return 缩放比
+     */
+    public static int calculateInSampleSize(ImageSize srcSize, ImageSize targetSize) {
         // 源图片的宽度
         int width = srcSize.width;
         int height = srcSize.height;
@@ -63,8 +66,7 @@ public class ImageUtils
         int reqWidth = targetSize.width;
         int reqHeight = targetSize.height;
 
-        if (width > reqWidth && height > reqHeight)
-        {
+        if (width > reqWidth && height > reqHeight) {
             // 计算出实际宽度和目标宽度的比率
             int widthRatio = Math.round((float) width / (float) reqWidth);
             int heightRatio = Math.round((float) height / (float) reqHeight);
@@ -74,14 +76,12 @@ public class ImageUtils
     }
 
     /**
-     * 根据ImageView获适当的压缩的宽和高
+     * 根据ImageView获取适当的压缩的宽和高
      *
-     * @param view
-     * @return
+     * @param view ImageView
+     * @return ImageView大小
      */
-    public static ImageSize getImageViewSize(View view)
-    {
-
+    public static ImageSize getImageViewSize(View view) {
         ImageSize imageSize = new ImageSize();
 
         imageSize.width = getExpectWidth(view);
@@ -93,104 +93,82 @@ public class ImageUtils
     /**
      * 根据view获得期望的高度
      *
-     * @param view
-     * @return
+     * @param view ImageView
+     * @return 高度
      */
-    private static int getExpectHeight(View view)
-    {
-
+    private static int getExpectHeight(View view) {
         int height = 0;
         if (view == null) return 0;
 
         final ViewGroup.LayoutParams params = view.getLayoutParams();
-        //如果是WRAP_CONTENT，此时图片还没加载，getWidth根本无效
-        if (params != null && params.height != ViewGroup.LayoutParams.WRAP_CONTENT)
-        {
-            height = view.getWidth(); // 获得实际的宽度
+        //如果是WRAP_CONTENT，此时图片还没加载，getHeight根本无效
+        if (params != null && params.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
+            height = view.getHeight(); // 获得实际的高度
         }
-        if (height <= 0 && params != null)
-        {
-            height = params.height; // 获得布局文件中的声明的宽度
+        if (height <= 0 && params != null) {
+            height = params.height; // 获得布局文件中的声明的高度
         }
-
-        if (height <= 0)
-        {
+        if (height <= 0) {
             height = getImageViewFieldValue(view, "mMaxHeight");// 获得设置的最大的宽度
         }
-
-        //如果宽度还是没有获取到，憋大招，使用屏幕的宽度
-        if (height <= 0)
-        {
+        //如果高度还是没有获取到，憋大招，使用屏幕的高度
+        if (height <= 0) {
             DisplayMetrics displayMetrics = view.getContext().getResources()
                     .getDisplayMetrics();
             height = displayMetrics.heightPixels;
         }
-
         return height;
     }
 
     /**
      * 根据view获得期望的宽度
      *
-     * @param view
-     * @return
+     * @param view ImageView
+     * @return 宽度
      */
-    private static int getExpectWidth(View view)
-    {
+    private static int getExpectWidth(View view) {
         int width = 0;
         if (view == null) return 0;
 
         final ViewGroup.LayoutParams params = view.getLayoutParams();
         //如果是WRAP_CONTENT，此时图片还没加载，getWidth根本无效
-        if (params != null && params.width != ViewGroup.LayoutParams.WRAP_CONTENT)
-        {
+        if (params != null && params.width != ViewGroup.LayoutParams.WRAP_CONTENT) {
             width = view.getWidth(); // 获得实际的宽度
         }
-        if (width <= 0 && params != null)
-        {
+        if (width <= 0 && params != null) {
             width = params.width; // 获得布局文件中的声明的宽度
         }
-
-        if (width <= 0)
-
-        {
+        if (width <= 0) {
             width = getImageViewFieldValue(view, "mMaxWidth");// 获得设置的最大的宽度
         }
         //如果宽度还是没有获取到，憋大招，使用屏幕的宽度
-        if (width <= 0)
-
-        {
+        if (width <= 0) {
             DisplayMetrics displayMetrics = view.getContext().getResources()
                     .getDisplayMetrics();
             width = displayMetrics.widthPixels;
         }
-
         return width;
     }
 
     /**
-     * 通过反射获取imageview的某个属性值
+     * 通过反射获取ImageView的某个属性值
      *
-     * @param object
-     * @param fieldName
-     * @return
+     * @param object    ImageView对象
+     * @param fieldName 属性名
+     * @return 属性值
      */
-    private static int getImageViewFieldValue(Object object, String fieldName)
-    {
+    private static int getImageViewFieldValue(Object object, String fieldName) {
         int value = 0;
-        try
-        {
+        try {
             Field field = ImageView.class.getDeclaredField(fieldName);
             field.setAccessible(true);
             int fieldValue = field.getInt(object);
-            if (fieldValue > 0 && fieldValue < Integer.MAX_VALUE)
-            {
+            if (fieldValue > 0 && fieldValue < Integer.MAX_VALUE) {
                 value = fieldValue;
             }
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
+            L.e(e.toString());
         }
         return value;
-
     }
 }
